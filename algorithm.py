@@ -216,3 +216,72 @@ def KNN(args, camera, out, T=10, blur=15):
 
     if key == ord("q"):
       break
+
+def LK_flow(args, camera, out, T=10, blur=15):
+  feature_params = dict(maxCorners=100,
+                        qualityLevel=0.3,
+                        minDistance=3,
+                        blockSize=7)
+  lk_params = dict(winSize=(15, 15),
+                  maxLevel=2,
+                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+  color = np.random.randint(0, 255, (100, 3))
+
+  ret, frame1 = camera.read()
+  prvs = cv2.cvtColor(frame1,cv2.COLOR_BGR2GRAY)
+  p0 = cv2.goodFeaturesToTrack(prvs, mask=None, **feature_params)
+  mask = np.zeros_like(frame1) 
+
+  while True:
+    (grabbed, frame) = camera.read()
+
+    if not grabbed:
+      break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+
+    p1, st, err = cv2.calcOpticalFlowPyrLK(prvs, gray, p0, None, **lk_params)
+    good_new = p1[st == 1]
+    good_old = p0[st == 1]
+
+    for i, (new, old) in enumerate(zip(good_new, good_old)):
+      a, b = new.ravel()
+      c, d = old.ravel()
+      mask = cv2.line(mask, (int(a), int(b)), (int(c),int(d)), color[i].tolist(), 2)
+      frame = cv2.circle(frame, (int(a),int(b)), 5, color[i].tolist(), -1)
+    
+    img = cv2.add(frame, mask)
+    cv2.imshow('frame', img)
+
+    prvs = gray
+    p0 = good_new.reshape(-1, 1, 2)
+
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("q"):
+      break
+
+def full_flow(args, camera, out, T=10, blur=15):
+  ret, frame1 = camera.read()
+  prvs = cv2.cvtColor(frame1,cv2.COLOR_BGR2GRAY)
+  hsv = np.zeros_like(frame1)
+  hsv[...,1] = 255
+
+  while(1):
+      ret, frame2 = camera.read()
+      next = cv2.cvtColor(frame2,cv2.COLOR_BGR2GRAY)
+
+      flow = cv2.calcOpticalFlowFarneback(prvs,next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+      mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+      hsv[...,0] = ang*180/np.pi/2
+      hsv[...,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+      # bgr = cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
+      
+      cv2.imshow("Security Feed", frame2)
+      cv2.imshow('frame2',hsv[...,2])
+      k = cv2.waitKey(1) & 0xff
+      if k == 27:
+          break
+      prvs = next
