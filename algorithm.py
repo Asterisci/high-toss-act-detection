@@ -24,6 +24,7 @@ def frame_diff(args, camera, out, T=10, blur=15):
     thresh = cv2.dilate(thresh, None, iterations=2)
     (cnts, _) = cv2.findContours(thresh.copy(),
                                  cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # print(np.array(cnts).shape)
 
     for c in cnts:
       if cv2.contourArea(c) < args["min_area"] or cv2.contourArea(c) > args["max_area"]:
@@ -244,6 +245,8 @@ def LK_flow(args, camera, out, T=10, blur=15):
   prvs = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
   p0 = cv2.goodFeaturesToTrack(prvs, mask=None, **feature_params)
   mask = np.zeros_like(frame1)
+
+  print(p0.shape)
 
   while True:
     (grabbed, frame) = camera.read()
@@ -474,3 +477,29 @@ def vibe(args, camera, out, T=10, blur=15):
 
     if key == ord("q"):
       break
+
+def diff_flow(args, camera, out, T=10, blur=15):
+  lastFrame = None
+
+  while True:
+    (grabbed, frame) = camera.read()
+
+    if not grabbed:
+      break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+
+    if lastFrame is None:
+      lastFrame = gray
+      continue
+
+    delta = cv2.absdiff(lastFrame, gray)
+    thresh = cv2.threshold(delta, T, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.dilate(thresh, None, iterations=2)
+    (cnts, _) = cv2.findContours(thresh.copy(),
+                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    mask = np.zeros_like(frame1)
+
+
+    lastFrame = gray
