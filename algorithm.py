@@ -246,7 +246,9 @@ def LK_flow(args, camera, out, T=10, blur=15):
   p0 = cv2.goodFeaturesToTrack(prvs, mask=None, **feature_params)
   mask = np.zeros_like(frame1)
 
-  print(p0.shape)
+  print(p0)
+
+  return
 
   while True:
     (grabbed, frame) = camera.read()
@@ -479,7 +481,19 @@ def vibe(args, camera, out, T=10, blur=15):
       break
 
 def diff_flow(args, camera, out, T=10, blur=15):
+  feature_params = dict(maxCorners=100,
+                      qualityLevel=0.3,
+                      minDistance=3,
+                      blockSize=7)
+  lk_params = dict(winSize=(25, 25),
+                   maxLevel=2,
+                   criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+  color = np.random.randint(0, 255, (100, 3))
+
   lastFrame = None
+  isDiff = True
+
+  wait = 0
 
   while True:
     (grabbed, frame) = camera.read()
@@ -492,14 +506,85 @@ def diff_flow(args, camera, out, T=10, blur=15):
 
     if lastFrame is None:
       lastFrame = gray
+      mask = np.zeros_like(frame)
       continue
 
-    delta = cv2.absdiff(lastFrame, gray)
-    thresh = cv2.threshold(delta, T, 255, cv2.THRESH_BINARY)[1]
-    thresh = cv2.dilate(thresh, None, iterations=2)
-    (cnts, _) = cv2.findContours(thresh.copy(),
-                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    mask = np.zeros_like(frame1)
+    if isDiff:
+      delta = cv2.absdiff(lastFrame, gray)
+      thresh = cv2.threshold(delta, T, 255, cv2.THRESH_BINARY)[1]
+      thresh = cv2.dilate(thresh, None, iterations=2)
+      (cnts, _) = cv2.findContours(thresh.copy(),
+                                  cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+      for c in cnts:
+        if cv2.contourArea(c) < args["min_area"] or cv2.contourArea(c) > args["max_area"]:
+          continue
+        else:
+          (x, y, w, h) = cv2.boundingRect(c)
+          cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+          p0 = np.array(c, dtype=np.float32)
+          p0 = np.mean(p0, axis=0)
+          p0 = p0[np.newaxis, :]
+          print(p0)
+          isDiff = False
+          # colorID = np.random.randint(0, 100)
+          cv2.imshow('frame', frame)
+          key = cv2.waitKey(100)
+          
+          # return
+        # cv2.waitKey(0)
+    else:
+      p1, st, err = cv2.calcOpticalFlowPyrLK(
+        lastFrame, gray, p0, None, **lk_params)
+      # if len(p1):
+        # print(1)
+      good_new = p1[st == 1]
+      good_old = p0[st == 1]
+
+      for i, (new, old) in enumerate(zip(good_new, good_old)):
+        a, b = new.ravel()
+        c, d = old.ravel()
+        mask = cv2.line(mask, (int(a), int(b)),
+                        (int(c), int(d)), color[i].tolist(), 2)
+        frame = cv2.circle(frame, (int(a), int(b)),
+                          5, color[i].tolist(), -1)
+      
+      print(good_new)
+      if good_new.shape[0] != 0 and wait < 6:
+        new = good_new.reshape(-1, 1, 2)
+        print()
+        if np.sum((new - p0)**2) < 0.5:
+          wait += 1
+        p0 = good_new.reshape(-1, 1, 2)
+      else:
+        isDiff = True
+        wait = 0
+      # print(p0)
+
+    frame = cv2.add(frame, mask)
+    
+    # p1, st, err = cv2.calcOpticalFlowPyrLK(
+    #     lastFrame, gray, np.array(cnts), None, **lk_params)
+    # good_new = p1[st == 1]
+    # good_old = p0[st == 1]
+
+    # for i, (new, old) in enumerate(zip(good_new, good_old)):
+    #   a, b = new.ravel()
+    #   c, d = old.ravel()
+    #   mask = cv2.line(mask, (int(a), int(b)),
+    #                   (int(c), int(d)), color[i].tolist(), 2)
+    #   frame = cv2.circle(frame, (int(a), int(b)),
+    #                      5, color[i].tolist(), -1)
+
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("q"):
+      break
+    # img = cv2.add(frame, mask)
+    out.write(frame)
+    cv2.imshow('frame', frame)
+
+    # p0 = good_new.reshape(-1, 1, 2)
 
 
     lastFrame = gray
