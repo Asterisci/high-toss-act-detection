@@ -246,10 +246,6 @@ def LK_flow(args, camera, out, T=10, blur=15):
   p0 = cv2.goodFeaturesToTrack(prvs, mask=None, **feature_params)
   mask = np.zeros_like(frame1)
 
-  print(p0)
-
-  return
-
   while True:
     (grabbed, frame) = camera.read()
 
@@ -485,9 +481,10 @@ def diff_flow(args, camera, out, T=10, blur=15):
                       qualityLevel=0.3,
                       minDistance=3,
                       blockSize=7)
-  lk_params = dict(winSize=(25, 25),
-                   maxLevel=2,
-                   criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+  lk_params = dict(winSize=(15, 15),
+                   maxLevel=3,
+                  #  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
+                  )
   color = np.random.randint(0, 255, (100, 3))
 
   lastFrame = None
@@ -501,8 +498,12 @@ def diff_flow(args, camera, out, T=10, blur=15):
     if not grabbed:
       break
 
+    frame = frame[45:448-45:, :]
+
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+
+
 
     if lastFrame is None:
       lastFrame = gray
@@ -523,9 +524,10 @@ def diff_flow(args, camera, out, T=10, blur=15):
           (x, y, w, h) = cv2.boundingRect(c)
           cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
           p0 = np.array(c, dtype=np.float32)
+          # p0 = p0.reshape(-1, 1, 2)
           p0 = np.mean(p0, axis=0)
           p0 = p0[np.newaxis, :]
-          print(p0)
+          print(p0.shape)
           isDiff = False
           # colorID = np.random.randint(0, 100)
           cv2.imshow('frame', frame)
@@ -549,12 +551,12 @@ def diff_flow(args, camera, out, T=10, blur=15):
         frame = cv2.circle(frame, (int(a), int(b)),
                           5, color[i].tolist(), -1)
       
-      print(good_new)
-      if good_new.shape[0] != 0 and wait < 6:
+      if wait < 6 and good_new.shape[0] != 0:
         new = good_new.reshape(-1, 1, 2)
-        print()
-        if np.sum((new - p0)**2) < 0.5:
+        if np.sum((new - p0)**2) < 0.05:
           wait += 1
+          
+          continue
         p0 = good_new.reshape(-1, 1, 2)
       else:
         isDiff = True
@@ -583,6 +585,8 @@ def diff_flow(args, camera, out, T=10, blur=15):
     # img = cv2.add(frame, mask)
     out.write(frame)
     cv2.imshow('frame', frame)
+    # cv2.imshow('gray', gray)
+
 
     # p0 = good_new.reshape(-1, 1, 2)
 
