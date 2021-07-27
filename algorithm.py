@@ -477,14 +477,15 @@ def vibe(args, camera, out, T=10, blur=15):
       break
 
 def diff_flow(args, camera, out, T=10, blur=15):
-  feature_params = dict(maxCorners=100,
-                      qualityLevel=0.3,
-                      minDistance=3,
-                      blockSize=7)
+  feature_params = dict(maxCorners=10,
+                        qualityLevel=0.1,
+                        minDistance=1,
+                        blockSize=2)
   lk_params = dict(winSize=(15, 15),
-                   maxLevel=3,
-                  #  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
-                  )
+                   maxLevel=2,
+                   criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+  color = np.random.randint(0, 255, (100, 3))
+
   color = np.random.randint(0, 255, (100, 3))
 
   lastFrame = None
@@ -498,7 +499,7 @@ def diff_flow(args, camera, out, T=10, blur=15):
     if not grabbed:
       break
 
-    frame = frame[45:448-45:, :]
+    # frame = frame[45:448-45:, :]
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (blur, blur), 0)
@@ -522,12 +523,16 @@ def diff_flow(args, camera, out, T=10, blur=15):
           continue
         else:
           (x, y, w, h) = cv2.boundingRect(c)
-          cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-          p0 = np.array(c, dtype=np.float32)
-          # p0 = p0.reshape(-1, 1, 2)
-          p0 = np.mean(p0, axis=0)
-          p0 = p0[np.newaxis, :]
-          print(p0.shape)
+          p0 = cv2.goodFeaturesToTrack(gray[x-w:x+w, y-h:y+h], mask=None, **feature_params)
+          # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+          # p0 = np.array(c, dtype=np.float32)
+          # p0 = np.mean(p0, axis=0)
+          # p0 = p0[np.newaxis, :]
+          # print(p0.shape)
+          if p0 is None:
+  
+            continue
+          p0 = p0+np.array([[x-w, y-h]], np.float32)
           isDiff = False
           # colorID = np.random.randint(0, 100)
           cv2.imshow('frame', frame)
@@ -553,7 +558,7 @@ def diff_flow(args, camera, out, T=10, blur=15):
       
       if wait < 6 and good_new.shape[0] != 0:
         new = good_new.reshape(-1, 1, 2)
-        if np.sum((new - p0)**2) < 0.05:
+        if np.sum((np.mean(new) - np.mean(p0))**2) < 0.05:
           wait += 1
           
           continue

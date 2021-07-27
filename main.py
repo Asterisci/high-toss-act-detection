@@ -21,7 +21,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
 
 # three_frame_diff(args, camera, out, 15, 21)
-diff_flow(args, camera, out, 5, 25)
+diff_flow(args, camera, out, 25, 25)
 
 # 清理摄像机资源并关闭打开的窗口
 camera.release()
