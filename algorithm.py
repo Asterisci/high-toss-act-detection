@@ -1,6 +1,9 @@
 import imutils
 import cv2
 import numpy as np
+from preprocess import add_blank
+
+from utils import *
 
 
 def frame_diff(args, camera, out, T=10, blur=15):
@@ -13,6 +16,7 @@ def frame_diff(args, camera, out, T=10, blur=15):
       break
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = add_blank(gray, 20, 100, 25, 340, 0)
     gray = cv2.GaussianBlur(gray, (blur, blur), 0)
 
     if lastFrame is None:
@@ -21,9 +25,8 @@ def frame_diff(args, camera, out, T=10, blur=15):
 
     delta = cv2.absdiff(lastFrame, gray)
     thresh = cv2.threshold(delta, T, 255, cv2.THRESH_BINARY)[1]
-    thresh = cv2.dilate(thresh, None, iterations=2)
-    (cnts, _) = cv2.findContours(thresh.copy(),
-                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    thresh = cv2.dilate(thresh, None, iterations=5)
+    (cnts, _) = cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     # print(np.array(cnts).shape)
 
     for c in cnts:
@@ -597,3 +600,84 @@ def diff_flow(args, camera, out, T=10, blur=15):
 
 
     lastFrame = gray
+
+def diff_track(args, camera, out, T=10, blur=15, dis=50, angle=2):
+  fgbg = cv2.createBackgroundSubtractorKNN()
+
+  track_point = []
+  frame_id = 0
+
+  while True:
+    (grabbed, frame) = camera.read()
+
+    if not grabbed:
+      break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = add_blank(gray, 20, 100, 25, 340, 0)
+    gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+
+    fgmask = fgbg.apply(gray)
+    thresh = cv2.threshold(fgmask, T, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.dilate(thresh, None, iterations=2)
+    (cnts, _) = cv2.findContours(thresh.copy(),
+                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for c in cnts:
+      if cv2.contourArea(c) < args["min_area"] or cv2.contourArea(c) > args["max_area"]:
+        continue
+
+      (x, y, w, h) = cv2.boundingRect(c)
+
+      p = np.array([x+w/2, y+h/2])
+      
+      if frame_id % 2 == 0: 
+
+        for i, track in enumerate(track_point):
+          p0 = np.array([track[0]+track[2]/2, track[1]+track[3]/2])
+          _dis = cal_dis(p, p0)
+
+          if _dis < dis:
+            if _dis < 5:
+              if track[6] > 5:
+                track_point.remove(track)
+              else:
+                track[6] += 1
+
+            v = cal_vel(p0, p)
+            _angle = v[1]/ v[0]
+            # print(v, _angle)
+            # if True:
+            # if np.abs(_angle) > 1 and v[1] > 0.5:
+              # print(v, _angle, p0, p)
+            if track[5] > 3:
+              cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+              cv2.putText(frame, str(track[4]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (55,255,155), 2)
+            track[5] += 1
+            track_point[i] = [x, y, w, h, track[4], track[5], 0]
+            break
+        else:
+          track_point.append([x, y, w, h, frame_id, 0, 0])
+
+      
+      
+
+
+      
+
+    # for p in point:
+
+      # track_point.append([])
+
+      # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    out.write(frame)
+    cv2.imshow("Security Feed", frame)
+    # cv2.imshow("Mask", fgmask)
+
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord("q"):
+      break
+
+    frame_id += 1
