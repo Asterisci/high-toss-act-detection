@@ -601,7 +601,7 @@ def diff_flow(args, camera, out, T=10, blur=15):
 
     lastFrame = gray
 
-def diff_track(args, camera, out, T=10, blur=15, dis=50, angle=2):
+def diff_track(args, camera, out, T=10, blur=100, dis=50, angle=2):
   fgbg = cv2.createBackgroundSubtractorKNN()
 
   track_point = []
@@ -629,16 +629,16 @@ def diff_track(args, camera, out, T=10, blur=15, dis=50, angle=2):
 
       (x, y, w, h) = cv2.boundingRect(c)
 
-      p = np.array([x+w/2, y+h/2])
+      p = np.array([x, y])
       
       if frame_id % 2 == 0: 
 
         for i, track in enumerate(track_point):
-          p0 = np.array([track[0]+track[2]/2, track[1]+track[3]/2])
+          p0 = np.array([track[0], track[1]])
           _dis = cal_dis(p, p0)
 
           if _dis < dis:
-            if _dis < 5:
+            if _dis < 2:
               if track[6] > 5:
                 track_point.remove(track)
               else:
@@ -648,13 +648,13 @@ def diff_track(args, camera, out, T=10, blur=15, dis=50, angle=2):
             _angle = v[1]/ v[0]
             # print(v, _angle)
             # if True:
-            # if np.abs(_angle) > 1 and v[1] > 0.5:
-              # print(v, _angle, p0, p)
-            if track[5] > 3:
-              cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-              cv2.putText(frame, str(track[4]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (55,255,155), 2)
-            track[5] += 1
-            track_point[i] = [x, y, w, h, track[4], track[5], 0]
+            if not v.any() < 0:
+              print(v, _angle, p0, p)
+              if track[5] > 5:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(frame, str(track[4]), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (55,255,155), 2)
+              track[5] += 1
+              track_point[i] = [x, y, w, h, track[4], track[5], 0]
             break
         else:
           track_point.append([x, y, w, h, frame_id, 0, 0])
@@ -673,7 +673,7 @@ def diff_track(args, camera, out, T=10, blur=15, dis=50, angle=2):
 
     out.write(frame)
     cv2.imshow("Security Feed", frame)
-    # cv2.imshow("Mask", fgmask)
+    # cv2.imshow("Mask", gray)
 
     key = cv2.waitKey(1) & 0xFF
 

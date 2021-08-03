@@ -10,7 +10,7 @@ from algorithm import *
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", help="path to the video file")
 ap.add_argument("-i", "--min-area", type=int, default=0, help="minimum area size")
-ap.add_argument("-x", "--max-area", type=int, default=10000, help="maximum area size")
+ap.add_argument("-x", "--max-area", type=int, default=200, help="maximum area size")
 args = vars(ap.parse_args())
 
 camera = cv2.VideoCapture(args['video'])
@@ -21,7 +21,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
 
 # three_frame_diff(args, camera, out, 15, 21)
-diff_track(args, camera, out, 25, 5)
+diff_track(args, camera, out, 5, 5)
 
 # 清理摄像机资源并关闭打开的窗口
 camera.release()
