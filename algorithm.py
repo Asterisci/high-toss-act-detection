@@ -648,7 +648,7 @@ def diff_track(args, camera, out, T=10, blur=100, dis=50, angle=2):
             _angle = v[1]/ v[0]
             # print(v, _angle)
             # if True:
-            if not v.any() < 0:
+            if np.abs(_angle) > 0.5 and x > 500 and x < 800:
               print(v, _angle, p0, p)
               if track[5] > 5:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
