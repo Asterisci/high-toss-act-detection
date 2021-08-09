@@ -1,4 +1,3 @@
-# 导入必要的软件包
 import argparse
 import datetime
 import time
@@ -6,24 +5,23 @@ import cv2
 
 from algorithm import *
 
-# 创建参数解析器并解析参数
 ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", help="path to the video file")
-ap.add_argument("-i", "--min-area", type=int, default=0, help="minimum area size")
-ap.add_argument("-x", "--max-area", type=int, default=200, help="maximum area size")
+ap.add_argument("--video", help="path to the video file")
+ap.add_argument("--min", type=int, default=0, help="minimum area size")
+ap.add_argument("--max", type=int, default=500, help="maximum area size")
+ap.add_argument("--blur", type=int, default=5, help="blur")
+ap.add_argument("--target", type=int, default=5, help="target")
+ap.add_argument("--blank", nargs='+', type=int)
 args = vars(ap.parse_args())
 
 camera = cv2.VideoCapture(args['video'])
-fps = camera.get(cv2.CAP_PROP_FPS)  # 帧数
-width, height = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)), int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))  # 宽高
-print((width, height))
+fps = camera.get(cv2.CAP_PROP_FPS)
+width, height = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)), int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
 
-# three_frame_diff(args, camera, out, 15, 21)
-diff_track(args, camera, out, 5, 5)
+diff_track(args, camera, out, args['target'], args['blur'])
 
-# 清理摄像机资源并关闭打开的窗口
 camera.release()
 out.release()
 cv2.destroyAllWindows()
