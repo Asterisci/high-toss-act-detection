@@ -1,3 +1,8 @@
+'''
+Author: 范国藩
+Date: 2021-07-26 10:16:47
+Description: 
+'''
 import argparse
 import datetime
 import time
@@ -18,10 +23,9 @@ camera = cv2.VideoCapture(args['video'])
 fps = camera.get(cv2.CAP_PROP_FPS)
 width, height = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)), int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('output.mp4', fourcc, fps, (width, height))
+args['config'] = [fourcc, fps, (width, height)]
 
-diff_track(args, camera, out, args['target'], args['blur'])
+diff_track(args, camera, args['target'], args['blur'])
 
 camera.release()
-out.release()
 cv2.destroyAllWindows()
