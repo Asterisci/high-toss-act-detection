@@ -30,7 +30,7 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
     thresh = cv2.threshold(fgmask, args['target'], 255, cv2.THRESH_BINARY)[1]
     thresh = cv2.dilate(thresh, None, iterations=2)
     (cnts, _) = cv2.findContours(thresh.copy(),
-                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for c in cnts:
       if cv2.contourArea(c) < args["min"] or cv2.contourArea(c) > args["max"]:
@@ -107,7 +107,7 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
 
   for rev_frame in reversed(img):
 
-    posList.append(list(track_point[:2]))
+    posList.append(list(track_point[:4]))
 
     if reverse_count > 20:
       break
