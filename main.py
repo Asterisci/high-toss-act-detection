@@ -28,4 +28,4 @@ args['config'] = [fourcc, fps, (width, height)]
 diff_track(args, camera, args['target'], args['blur'])
 
 camera.release()
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()

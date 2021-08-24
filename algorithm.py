@@ -194,16 +194,3 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
   output_text(frame_id, list(reversed(posList)))
 
   return track_point
-
-def output_video(args, frame, id):
-  out = cv2.VideoWriter(id + '_output.mp4', *args['config'])
-  for i in frame:
-    out.write(i)
-  out.release()
-
-def output_text(id, posList):
-  out = {
-    'start_id': id, 
-    'posList': posList
-  }
-  print(out)

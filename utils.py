@@ -1,7 +1,19 @@
-import numpy as np
+'''
+Author: 范国藩
+Date: 2021-08-02 10:38:44
+Description: 
+'''
+import cv2
 
-def cal_dis(x, y):
-  return np.sqrt(np.sum(np.square(y - x)))
+def output_video(args, frame, id):
+  out = cv2.VideoWriter(id + '_output.mp4', *args['config'])
+  for i in frame:
+    out.write(i)
+  out.release()
 
-def cal_vel(x0, x):
-  return x - x0
+def output_text(id, posList):
+  out = {
+    'start_id': id, 
+    'posList': posList
+  }
+  print(out)
