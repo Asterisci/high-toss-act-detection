@@ -1,11 +1,11 @@
 import cv2
-import _thread as thread
+import threading
 import numpy as np
 from preprocess import add_blank
 
 from utils import *
 
-def diff_track(args, camera, out, T, blur, dis=100, angle=2):
+def diff_track(args, camera, T, blur, dis=100, angle=2):
   fgbg = cv2.createBackgroundSubtractorKNN()
 
   track_point = []
@@ -74,37 +74,43 @@ def diff_track(args, camera, out, T, blur, dis=100, angle=2):
         track_point_np[_index, 6] = 0
 
         for point in track_point_np[np.logical_and(track_point_np[:, 6] >= 9, track_point_np[:, 5] > 5)]:
-          reverse_track(args, fgbg, img, point, str(point[7]), T, blur, dis)
-          # thread.start_new_thread( reverse_track, (img, ))
+          # reverse_track(args, frame_id, fgbg, img, point, str(point[7]), T, blur, dis)
+          t = threading.Thread(target=reverse_track, args=(args, frame_id, fgbg, img, point, str(point[7]), T, blur, dis))
+          t.start()
+          # thread.start_new_thread( reverse_track, (args, frame_id, fgbg, img, point, str(point[7]), T, blur, dis))
 
         track_point_np = track_point_np[track_point_np[:, 6] < 9]
 
         track_point = track_point_np.tolist()
 
-    out.write(frame)
-    cv2.imshow("Security Feed", frame)
+    # out.write(frame)
+    # cv2.imshow("Security Feed", frame)
     # cv2.imshow("Mask", gray)
 
-    key = cv2.waitKey(1) & 0xFF
+    # key = cv2.waitKey(1) & 0xFF
 
-    if key == ord("q"):
-      break
+    # if key == ord("q"):
+    #   break
 
     frame_id += 1
 
 
-def reverse_track(args, fg, img, end_point, point_id, T, blur, dis=5):
+def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
 
   track_point = end_point
   reverse_count = 0
 
   last = None
 
+  frame_list = []
+  pos_list = []
+
   for rev_frame in reversed(img):
 
+    pos_list.append(list(track_point[:4]))
+
     if reverse_count > 20:
-      print(track_point)
-      return track_point
+      break
 
     gray = cv2.cvtColor(rev_frame, cv2.COLOR_BGR2GRAY)
     if args['blank']:
@@ -115,6 +121,7 @@ def reverse_track(args, fg, img, end_point, point_id, T, blur, dis=5):
 
     if last is None:
       last = gray
+      frame_id -= 1
       continue
 
     fgmask_rev = fg.apply(gray)
@@ -134,8 +141,8 @@ def reverse_track(args, fg, img, end_point, point_id, T, blur, dis=5):
     (cnts, _) = cv2.findContours(thresh.copy(),
                                  cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    cv2.imshow("mask", thresh)
-    key = cv2.waitKey(10) & 0xFF
+    # cv2.imshow("mask", thresh)
+    # key = cv2.waitKey(10) & 0xFF
     detection_list = []
 
     for c in cnts:
@@ -167,8 +174,13 @@ def reverse_track(args, fg, img, end_point, point_id, T, blur, dis=5):
     cv2.putText(rev_frame, str(point_id), (x, y),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (55, 255, 155), 2)
 
-    cv2.imshow("Security Feed", rev_frame)
-    key = cv2.waitKey(10) & 0xFF
+    # out = args['out']
+    # out.write(rev_frame)
+
+    frame_list.append(rev_frame)
+
+    # cv2.imshow("Security Feed", rev_frame)
+    # key = cv2.waitKey(10) & 0xFF
 
     # if np.min(_dis) < 10:
     #   reverse_count += 1
@@ -176,3 +188,9 @@ def reverse_track(args, fg, img, end_point, point_id, T, blur, dis=5):
     #   reverse_count = 0
 
     last = gray
+    frame_id -= 1
+
+  output_video(args, list(reversed(frame_list)), str(point_id))
+  output_text(frame_id, list(reversed(pos_list)))
+
+  return track_point

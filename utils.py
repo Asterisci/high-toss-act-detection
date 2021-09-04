@@ -1,7 +1,14 @@
-import numpy as np
+import cv2
 
-def cal_dis(x, y):
-  return np.sqrt(np.sum(np.square(y - x)))
+def output_video(args, frame, id):
+  out = cv2.VideoWriter(id + '_output.mp4', *args['config'])
+  for i in frame:
+    out.write(i)
+  out.release()
 
-def cal_vel(x0, x):
-  return x - x0
+def output_text(id, pos_list):
+  out = {
+    'start_id': id, 
+    'pos_list': pos_list
+  }
+  print(out)

@@ -1,5 +1,6 @@
 .DS_Store
 *.mp4
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
