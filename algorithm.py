@@ -30,7 +30,7 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
     thresh = cv2.threshold(fgmask, args['target'], 255, cv2.THRESH_BINARY)[1]
     thresh = cv2.dilate(thresh, None, iterations=2)
     (cnts, _) = cv2.findContours(thresh.copy(),
-                                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for c in cnts:
       if cv2.contourArea(c) < args["min"] or cv2.contourArea(c) > args["max"]:
@@ -102,12 +102,12 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
 
   last = None
 
-  frameList = []
-  posList = []
+  frame_list = []
+  pos_list = []
 
   for rev_frame in reversed(img):
 
-    posList.append(list(track_point[:4]))
+    pos_list.append(list(track_point[:4]))
 
     if reverse_count > 20:
       break
@@ -177,7 +177,7 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
     # out = args['out']
     # out.write(rev_frame)
 
-    frameList.append(rev_frame)
+    frame_list.append(rev_frame)
 
     # cv2.imshow("Security Feed", rev_frame)
     # key = cv2.waitKey(10) & 0xFF
@@ -190,7 +190,7 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
     last = gray
     frame_id -= 1
 
-  output_video(args, list(reversed(frameList)), str(point_id))
-  output_text(frame_id, list(reversed(posList)))
+  output_video(args, list(reversed(frame_list)), str(point_id))
+  output_text(frame_id, list(reversed(pos_list)))
 
   return track_point

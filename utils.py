@@ -1,8 +1,3 @@
-'''
-Author: 范国藩
-Date: 2021-08-02 10:38:44
-Description: 
-'''
 import cv2
 
 def output_video(args, frame, id):
@@ -11,9 +6,9 @@ def output_video(args, frame, id):
     out.write(i)
   out.release()
 
-def output_text(id, posList):
+def output_text(id, pos_list):
   out = {
     'start_id': id, 
-    'posList': posList
+    'pos_list': pos_list
   }
   print(out)
