@@ -23,7 +23,7 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     if args['blank']:
-      gray = add_blank(gray, args['blank'], 0)  # 添加时间水印条
+      gray = add_blank(gray, args['blank'], 0)
     gray = cv2.GaussianBlur(gray, (blur, blur), 0)
 
     fgmask = fgbg.apply(gray)
@@ -82,6 +82,9 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
         track_point_np = track_point_np[track_point_np[:, 6] < 9]
 
         track_point = track_point_np.tolist()
+
+    if len(img) > args['img']:
+      img.pop(0)
 
     # out.write(frame)
     # cv2.imshow("Security Feed", frame)

@@ -2,6 +2,8 @@
 *.mp4
 *.zip
 
+get_rtsp.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
