@@ -15,6 +15,7 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
 
   while True:
     (grabbed, frame) = camera.read()
+    # print(frame_id)
 
     if not grabbed:
       break
