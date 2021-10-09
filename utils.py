@@ -1,3 +1,5 @@
+# coding=UTF-8
+
 import cv2
 
 def output_video(args, frame, id):

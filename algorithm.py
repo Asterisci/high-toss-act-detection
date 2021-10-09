@@ -1,3 +1,5 @@
+# coding=UTF-8
+
 import cv2
 import threading
 import numpy as np
