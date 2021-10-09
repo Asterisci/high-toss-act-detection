@@ -8,9 +8,8 @@ from preprocess import add_blank
 from utils import *
 
 def diff_track(args, camera, T, blur):
-
-  # 背景检测方法
-  fgbg = cv2.createBackgroundSubtractorKNN()
+  cuda_stream = cv2.cuda_Stream()
+  fgbg = cv2.cuda.createBackgroundSubtractorMOG2()
 
   # 检测队列
   track_point = []
@@ -23,11 +22,11 @@ def diff_track(args, camera, T, blur):
   count = args['count']
   updatecount = args['updatecount']
   reversedis = args['reversedis']
+  gpu_gray = cv2.cuda_GpuMat()
 
   while True:
     # 获得帧
     (grabbed, frame) = camera.read()
-    # print(frame_id)
 
     # 如果没有帧就停止
     if not grabbed:
@@ -45,14 +44,11 @@ def diff_track(args, camera, T, blur):
 
     # 高斯模糊
     gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+    gpu_gray.upload(gray)
 
-    # 背景检测
-    fgmask = fgbg.apply(gray)
-
-    # 二值化
-    thresh = cv2.threshold(fgmask, args['target'], 255, cv2.THRESH_BINARY)[1]
-
-    # 腐蚀膨胀
+    fgmask_gpu = fgbg.apply(gpu_gray, -1, cuda_stream)
+    thresh_gpu = cv2.cuda.threshold(fgmask_gpu, args['target'], 255, cv2.THRESH_BINARY)[1]
+    thresh = thresh_gpu.download()
     thresh = cv2.dilate(thresh, None, iterations=2)
 
     # 检测识别
@@ -143,6 +139,8 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis):
   frame_list = []
   pos_list = []
 
+  gpu_gray_rev = cv2.cuda_GpuMat()
+
   for rev_frame in reversed(img):
 
     # 位置数组
@@ -164,7 +162,10 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis):
       frame_id -= 1
       continue
 
-    fgmask_rev = fg.apply(gray)
+    gpu_gray_rev.upload(gray)
+    gpu_fgmask_rev = fg.apply(gpu_gray_rev)
+
+    fgmask_rev = gpu_fgmask_rev.download()
 
     # 边界检测
     y_0 = track_point[1]-50 if track_point[1]-50 > 0 else 0
