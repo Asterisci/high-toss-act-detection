@@ -46,7 +46,6 @@ def diff_track(args, camera, T, blur, dis=100, angle=2):
 
         track_point_np = np.array(track_point)
         if track_point_np.size == 0:
-          # [x, y, w, h, insert_frame_id, display_count, stop_count]
           track_point.append([x, y, w, h, frame_id, 0, 0, 0])
           continue
 
@@ -196,7 +195,10 @@ def reverse_track(args, frame_id, fg, img, end_point, point_id, T, blur, dis=5):
     last = gray
     frame_id -= 1
 
-  output_video(args, list(reversed(frame_list)), str(point_id))
-  output_text(frame_id, list(reversed(pos_list)))
+  frame_list = list(reversed(frame_list))
+
+  output_res(args, frame_list, frame_list[int(len(frame_list)/2)])
+  # for debug
+  # output_text(frame_id, frame_list)
 
   return track_point
