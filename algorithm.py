@@ -115,7 +115,7 @@ def diff_track(args, camera, T, blur):
         # 更新的计数重置
         track_point_np[_index, 6] = 0
 
-        # 9次没有更新进入且识别到的册数大于5回溯识别
+        # updatecount次没有更新进入且识别到的次数大于count进入回溯识别
         for point in track_point_np[np.logical_and(track_point_np[:, 6] >= updatecount, track_point_np[:, 5] > count)]:
           t = threading.Thread(target=reverse_track, args=(args, frame_id, fgbg, img, point, str(point[7]), T, blur, reversedis))
           t.start()
